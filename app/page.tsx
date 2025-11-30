@@ -158,7 +158,7 @@ const formatHourLabel = (hour: number) => {
 };
 
 const formatNumber = (value: number) =>
-  value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 const formatTimeAgo = (iso: string) => {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -331,11 +331,11 @@ export default function Home() {
           place: row.place_name,
           score: row.score ?? row.live_count ?? 0,
           live: row.live_count ?? row.score ?? 0,
-          isFavorite: favorites.has(row.place_name),
+          isFavorite: false,
         })
       ) ?? [];
     setRemoteRanking(mapped);
-  }, [favorites]);
+  }, []);
 
   const loadUserData = useCallback(async (client: SupabaseClient, userSession: Session) => {
     setUserDataLoading(true);
@@ -706,6 +706,10 @@ export default function Home() {
   }, [createLiveSnapshot]);
 
   useEffect(() => {
+    setNowHour(new Date().getHours());
+  }, []);
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -794,7 +798,7 @@ export default function Home() {
   const liveCount = liveVisitors[selectedPlace.name] ?? selectedPlace.visitorCount;
   const busyNow = getBusyColor(liveCount);
   const hourlySeries = hourlyProfiles[selectedPlace.name] || [];
-  const nowHour = new Date().getHours();
+  const [nowHour, setNowHour] = useState(0);
   const maxHourly = Math.max(...hourlySeries, liveCount, 1);
   const computedRanking = useMemo<RankingItem[]>(() => {
     return POPULAR_PLACES.map((place) => {
