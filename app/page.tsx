@@ -1,7 +1,8 @@
 "use client";
 
+import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
 import type { Polygon } from "geojson";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -18,6 +19,26 @@ type Place = {
   visitorCount: number;
   youtubeQuery?: string;
 };
+
+type VisitEntry = {
+  place: string;
+  visitedAt: string;
+};
+
+type RankingItem = {
+  place: string;
+  score: number;
+  live: number;
+  isFavorite: boolean;
+};
+
+const BASE_HOURLY_WEIGHTS: number[] = [
+  0.18, 0.16, 0.14, 0.13, 0.15, 0.32, 0.48, 0.62, 0.72, 0.82, 0.92, 0.98,
+  1, 0.98, 0.95, 0.9, 0.85, 0.78, 0.7, 0.6, 0.5, 0.4, 0.3, 0.22,
+];
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const POPULAR_PLACES: Place[] = [
   {
@@ -130,6 +151,52 @@ const POPULAR_PLACES: Place[] = [
   },
 ];
 
+const formatHourLabel = (hour: number) => {
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}${suffix}`;
+};
+
+const formatNumber = (value: number) =>
+  value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+const formatTimeAgo = (iso: string) => {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  if (diffMinutes < 1) return "just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+};
+
+const buildHourlyProfiles = (places: Place[]) => {
+  return places.reduce((acc, place, idx) => {
+    const weightJitter = 0.92 + (idx % 5) * 0.02;
+    acc[place.name] = BASE_HOURLY_WEIGHTS.map((weight, hour) => {
+      const weekendLift = hour >= 10 && hour <= 20 ? 1.05 : 0.95;
+      const noise = 0.9 + Math.random() * 0.15;
+      const count = Math.round(place.visitorCount * weight * weightJitter * weekendLift * noise);
+      return Math.max(70, count);
+    });
+    return acc;
+  }, {} as Record<string, number[]>);
+};
+
+const generateLiveSnapshot = (profiles: Record<string, number[]>) => {
+  const now = new Date();
+  const hour = now.getHours();
+  const minuteWave = 0.9 + 0.1 * Math.sin((now.getMinutes() / 60) * Math.PI * 2);
+
+  return POPULAR_PLACES.reduce((acc, place) => {
+    const baseline = profiles[place.name]?.[hour] ?? place.visitorCount;
+    const jitter = 0.9 + Math.random() * 0.25;
+    acc[place.name] = Math.max(50, Math.round(baseline * jitter * minuteWave));
+    return acc;
+  }, {} as Record<string, number>);
+};
+
 export default function Home() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -139,6 +206,43 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState("All areas");
   const [categoryFilter, setCategoryFilter] = useState("All categories");
+  const supabase = useMemo<SupabaseClient | null>(() => {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+    return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }, []);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const siteUrl = useMemo(
+    () =>
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (typeof window !== "undefined" ? window.location.origin : ""),
+    []
+  );
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [history, setHistory] = useState<VisitEntry[]>([]);
+  const [remoteRanking, setRemoteRanking] = useState<RankingItem[]>([]);
+  const [userDataLoading, setUserDataLoading] = useState(false);
+  const hourlyProfiles = useMemo(
+    () => buildHourlyProfiles(POPULAR_PLACES),
+    []
+  );
+  const createLiveSnapshot = useMemo(
+    () => () => generateLiveSnapshot(hourlyProfiles),
+    [hourlyProfiles]
+  );
+  const liveVisitorsRef = useRef<Record<string, number>>({});
+  const [liveVisitors, setLiveVisitors] = useState<Record<string, number>>(() => {
+    const fallback = POPULAR_PLACES.reduce((acc, place) => {
+      acc[place.name] = place.visitorCount;
+      return acc;
+    }, {} as Record<string, number>);
+    liveVisitorsRef.current = fallback;
+    return fallback;
+  });
 
   const token = useMemo(
     () => process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "",
@@ -170,6 +274,79 @@ export default function Home() {
     });
   }, [areaFilter, categoryFilter, searchQuery]);
 
+  const fetchFavorites = useCallback(async (client: SupabaseClient, userId: string) => {
+    const { data, error } = await client
+      .from("favorites")
+      .select("place_name")
+      .eq("user_id", userId)
+      .order("place_name", { ascending: true })
+      .limit(100);
+
+    if (error) {
+      console.warn("Failed to load favorites", error.message);
+      return;
+    }
+
+    const next = new Set<string>();
+    data?.forEach((row: { place_name: string }) => next.add(row.place_name));
+    setFavorites(next);
+  }, []);
+
+  const fetchHistory = useCallback(async (client: SupabaseClient, userId: string) => {
+    const { data, error } = await client
+      .from("visit_history")
+      .select("place_name, visited_at")
+      .eq("user_id", userId)
+      .order("visited_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.warn("Failed to load history", error.message);
+      return;
+    }
+
+    const mapped: VisitEntry[] =
+      data?.map((row: { place_name: string; visited_at: string }) => ({
+        place: row.place_name,
+        visitedAt: row.visited_at,
+      })) ?? [];
+    setHistory(mapped);
+  }, []);
+
+  const fetchRemoteRanking = useCallback(async (client: SupabaseClient) => {
+    const { data, error } = await client
+      .from("popularity_ranking")
+      .select("place_name, score, live_count")
+      .order("score", { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.warn("Failed to load popularity ranking", error.message);
+      return;
+    }
+
+    const mapped: RankingItem[] =
+      data?.map(
+        (row: { place_name: string; score: number; live_count?: number }) => ({
+          place: row.place_name,
+          score: row.score ?? row.live_count ?? 0,
+          live: row.live_count ?? row.score ?? 0,
+          isFavorite: favorites.has(row.place_name),
+        })
+      ) ?? [];
+    setRemoteRanking(mapped);
+  }, [favorites]);
+
+  const loadUserData = useCallback(async (client: SupabaseClient, userSession: Session) => {
+    setUserDataLoading(true);
+    await Promise.allSettled([
+      fetchFavorites(client, userSession.user.id),
+      fetchHistory(client, userSession.user.id),
+      fetchRemoteRanking(client),
+    ]);
+    setUserDataLoading(false);
+  }, [fetchFavorites, fetchHistory, fetchRemoteRanking]);
+
   useEffect(() => {
     if (
       filteredPlaces.length > 0 &&
@@ -182,12 +359,152 @@ export default function Home() {
     }
   }, [filteredPlaces, selectedPlace.name]);
 
+  useEffect(() => {
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null);
+      if (data.session) {
+        loadUserData(supabase, data.session);
+      }
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+        if (newSession) {
+          loadUserData(supabase, newSession);
+        } else {
+          setFavorites(new Set());
+          setHistory([]);
+          setRemoteRanking([]);
+        }
+      }
+    );
+
+    return () => listener?.subscription.unsubscribe();
+  }, [loadUserData, supabase]);
+
   const getBusyColor = (visitorCount: number) => {
     if (visitorCount >= 1800) return { label: "Very Busy", color: "#dc2626" };
     if (visitorCount >= 1200) return { label: "Busy", color: "#f97316" };
     if (visitorCount >= 800) return { label: "Moderate", color: "#facc15" };
     return { label: "Calm", color: "#22c55e" };
   };
+
+  const handleAuthSubmit = async () => {
+    setAuthError(null);
+    if (!supabase) {
+      setAuthError("Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable auth.");
+      return;
+    }
+    if (!authEmail || !authPassword) {
+      setAuthError("Email and password are required.");
+      return;
+    }
+    setAuthLoading(true);
+
+    const { data, error } =
+      authMode === "signin"
+        ? await supabase.auth.signInWithPassword({
+            email: authEmail,
+            password: authPassword,
+          })
+        : await supabase.auth.signUp({
+            email: authEmail,
+            password: authPassword,
+            options: siteUrl
+              ? {
+                  emailRedirectTo: `${siteUrl}/`,
+                }
+              : undefined,
+          });
+
+    if (error) {
+      setAuthError(error.message);
+    } else {
+      setSession(data.session ?? null);
+      if (data.session) {
+        loadUserData(supabase, data.session);
+      }
+    }
+
+    setAuthLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setSession(null);
+    setFavorites(new Set());
+    setHistory([]);
+    setRemoteRanking([]);
+  };
+
+  const toggleFavorite = async (place: Place) => {
+    const isFav = favorites.has(place.name);
+    const optimistic = new Set(favorites);
+    if (isFav) {
+      optimistic.delete(place.name);
+    } else {
+      optimistic.add(place.name);
+    }
+    setFavorites(optimistic);
+
+    if (!supabase || !session) return;
+
+    if (isFav) {
+      const { error } = await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", session.user.id)
+        .eq("place_name", place.name);
+      if (error) {
+        console.warn("Failed to remove favorite", error.message);
+        const revert = new Set(favorites);
+        setFavorites(revert);
+      }
+    } else {
+      const { error } = await supabase.from("favorites").upsert({
+        user_id: session.user.id,
+        place_name: place.name,
+        created_at: new Date().toISOString(),
+      });
+      if (error) {
+        console.warn("Failed to save favorite", error.message);
+        const revert = new Set(favorites);
+        revert.delete(place.name);
+        setFavorites(revert);
+      }
+    }
+  };
+
+  const recordVisit = useCallback(
+    async (placeName: string) => {
+      const entry: VisitEntry = {
+        place: placeName,
+        visitedAt: new Date().toISOString(),
+      };
+
+      setHistory((prev) => {
+        const filtered = prev.filter((item) => item.place !== placeName);
+        return [entry, ...filtered].slice(0, 30);
+      });
+
+      if (!supabase || !session) return;
+
+      const { error } = await supabase.from("visit_history").insert({
+        user_id: session.user.id,
+        place_name: placeName,
+        visited_at: entry.visitedAt,
+      });
+
+      if (error) {
+        console.warn("Failed to write history", error.message);
+      }
+    },
+    [session, supabase]
+  );
 
   const createPolygonAround = (
     [lng, lat]: [number, number],
@@ -206,6 +523,10 @@ export default function Home() {
       ],
     };
   };
+
+  useEffect(() => {
+    recordVisit(selectedPlace.name);
+  }, [recordVisit, selectedPlace.name]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -298,7 +619,7 @@ export default function Home() {
 
         markersRef.current[place.name] = marker;
 
-        const busy = getBusyColor(place.visitorCount);
+        const busy = getBusyColor(liveVisitorsRef.current[place.name] ?? place.visitorCount);
         const sourceId = `${place.name}-zone`;
         const layerId = `${place.name}-zone-fill`;
         const outlineId = `${place.name}-zone-outline`;
@@ -366,6 +687,64 @@ export default function Home() {
     };
   }, [token]);
 
+  useEffect(() => {
+    liveVisitorsRef.current = liveVisitors;
+  }, [liveVisitors]);
+
+  useEffect(() => {
+    const initialSnapshot = createLiveSnapshot();
+    liveVisitorsRef.current = initialSnapshot;
+    setLiveVisitors(initialSnapshot);
+
+    const interval = setInterval(() => {
+      const snapshot = createLiveSnapshot();
+      liveVisitorsRef.current = snapshot;
+      setLiveVisitors(snapshot);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [createLiveSnapshot]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    POPULAR_PLACES.forEach((place) => {
+      const liveCount = liveVisitors[place.name] ?? place.visitorCount;
+      const busy = getBusyColor(liveCount);
+      const fillId = `${place.name}-zone-fill`;
+      const outlineId = `${place.name}-zone-outline`;
+
+      if (map.getLayer(fillId)) {
+        map.setPaintProperty(fillId, "fill-color", busy.color);
+      }
+
+      if (map.getLayer(outlineId)) {
+        map.setPaintProperty(outlineId, "line-color", busy.color);
+      }
+    });
+  }, [liveVisitors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    POPULAR_PLACES.forEach((place) => {
+      const fillId = `${place.name}-zone-fill`;
+      const outlineId = `${place.name}-zone-outline`;
+      const favorite = favorites.has(place.name);
+
+      if (map.getLayer(outlineId)) {
+        map.setPaintProperty(outlineId, "line-width", favorite ? 3.5 : 2);
+        map.setPaintProperty(outlineId, "line-opacity", favorite ? 0.95 : 0.7);
+      }
+
+      if (map.getLayer(fillId)) {
+        map.setPaintProperty(fillId, "fill-opacity", favorite ? 0.2 : 0.14);
+      }
+    });
+  }, [favorites]);
+
   const flyToPlace = (map: mapboxgl.Map, place: Place) => {
     map.flyTo({
       center: place.coordinates,
@@ -411,6 +790,33 @@ export default function Home() {
 
     return null;
   };
+
+  const liveCount = liveVisitors[selectedPlace.name] ?? selectedPlace.visitorCount;
+  const busyNow = getBusyColor(liveCount);
+  const hourlySeries = hourlyProfiles[selectedPlace.name] || [];
+  const nowHour = new Date().getHours();
+  const maxHourly = Math.max(...hourlySeries, liveCount, 1);
+  const computedRanking = useMemo<RankingItem[]>(() => {
+    return POPULAR_PLACES.map((place) => {
+      const live = liveVisitors[place.name] ?? place.visitorCount;
+      const isFavorite = favorites.has(place.name);
+      return {
+        place: place.name,
+        live,
+        score: live + (isFavorite ? 120 : 0),
+        isFavorite,
+      };
+    }).sort((a, b) => b.score - a.score);
+  }, [favorites, liveVisitors]);
+  const popularityRanking = useMemo<RankingItem[]>(() => {
+    const source = remoteRanking.length > 0 ? remoteRanking : computedRanking;
+    return source.map((item) => ({
+      ...item,
+      isFavorite: favorites.has(item.place),
+    }));
+  }, [computedRanking, favorites, remoteRanking]);
+  const favoriteList = useMemo(() => Array.from(favorites), [favorites]);
+  const recentHistory = useMemo(() => history.slice(0, 8), [history]);
 
   return (
     <div className="page">
@@ -475,6 +881,70 @@ export default function Home() {
             ))}
           </div>
         </div>
+        <div className="auth-card">
+          <div className="auth-head">
+            <div>
+              <p className="eyebrow small">Account</p>
+              <p className="auth-title">
+                {session
+                  ? `Signed in as ${session.user.email}`
+                  : "Sign in to save favorites, history, and rankings"}
+              </p>
+            </div>
+            {session ? (
+              <button className="ghost-btn" onClick={handleSignOut}>
+                Sign out
+              </button>
+            ) : null}
+          </div>
+          {!supabase ? (
+            <p className="muted">
+              Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+              in `.env.local` to enable Supabase auth.
+            </p>
+          ) : session ? (
+            <div className="auth-summary">
+              <span className="badge muted">
+                Synced favorites & history {userDataLoading ? "…" : ""}
+              </span>
+            </div>
+          ) : (
+            <div className="auth-fields">
+              <input
+                type="email"
+                placeholder="Email"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+              />
+              {authError ? <p className="auth-error">{authError}</p> : null}
+              <div className="auth-actions">
+                <button className="primary-btn" onClick={handleAuthSubmit} disabled={authLoading}>
+                  {authLoading
+                    ? "Working..."
+                    : authMode === "signin"
+                    ? "Sign in"
+                    : "Create account"}
+                </button>
+                <button
+                  className="ghost-btn"
+                  onClick={() =>
+                    setAuthMode((mode) => (mode === "signin" ? "signup" : "signin"))
+                  }
+                >
+                  {authMode === "signin"
+                    ? "Need an account? Sign up"
+                    : "Have an account? Sign in"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         <ul className="place-list">
           {filteredPlaces.length === 0 ? (
             <li className="empty">No places match your search.</li>
@@ -503,6 +973,24 @@ export default function Home() {
           <h3>{selectedPlace.name}</h3>
           <p className="muted">{selectedPlace.address}</p>
           <p>{selectedPlace.description}</p>
+          <div className="live-row">
+            <span
+              className="live-dot"
+              style={{
+                backgroundColor: busyNow.color,
+                boxShadow: `0 0 0 8px ${busyNow.color}22`,
+              }}
+            />
+            <div className="live-copy">
+              <span className="live-title">Live visitors</span>
+              <span className="live-value">
+                {formatNumber(liveCount)} people now · {busyNow.label}
+              </span>
+              <span className="live-subtitle">
+                Refreshed every 15s using live activity signal
+              </span>
+            </div>
+          </div>
           <div className="stats">
             <span className="badge muted">
               {selectedPlace.area} · {selectedPlace.category}
@@ -513,12 +1001,56 @@ export default function Home() {
             <span
               className="badge"
               style={{
-                background: getBusyColor(selectedPlace.visitorCount).color,
+                background: busyNow.color,
                 color: "#0f172a",
               }}
             >
-              {getBusyColor(selectedPlace.visitorCount).label} now
+              {busyNow.label} now · {formatNumber(liveCount)} visitors
             </span>
+          </div>
+          <button
+            className={`favorite-btn${favorites.has(selectedPlace.name) ? " active" : ""}`}
+            onClick={() => toggleFavorite(selectedPlace)}
+            disabled={!supabase}
+            title={supabase ? "Save this place to your Supabase favorites" : "Add Supabase env keys to enable sync"}
+          >
+            {favorites.has(selectedPlace.name) ? "★ Favorited" : "☆ Add to favorites"}
+          </button>
+          {!supabase ? (
+            <p className="muted small">
+              Favorites & history are stored when Supabase keys are configured.
+            </p>
+          ) : null}
+          <div className="popular-times">
+            <div className="popular-times-header">
+              <span>Hourly visitors (local time)</span>
+              <span className="muted">Live-based hourly estimate</span>
+            </div>
+            <div className="popular-grid">
+              {hourlySeries.map((count, hour) => {
+                const isNow = hour === nowHour;
+                const value = isNow ? liveCount : count;
+                const busy = getBusyColor(value);
+                const barHeight = Math.max(8, Math.round((value / maxHourly) * 82));
+
+                return (
+                  <div key={hour} className={`popular-bar${isNow ? " now" : ""}`}>
+                    <div className="bar-track">
+                      <div
+                        className="bar-fill"
+                        style={{
+                          height: `${barHeight}px`,
+                          background: busy.color,
+                        }}
+                      />
+                    </div>
+                    <span className="bar-label">{formatHourLabel(hour)}</span>
+                    <span className="bar-value">{formatNumber(value)}</span>
+                    {isNow ? <span className="bar-now">Now</span> : null}
+                  </div>
+                );
+              })}
+            </div>
           </div>
           {renderPhotos(selectedPlace)}
           {selectedPlace.youtubeQuery ? (
@@ -534,6 +1066,103 @@ export default function Home() {
               />
             </div>
           ) : null}
+        </div>
+        <div className="dashboard">
+          <div className="dashboard-header">
+            <div>
+              <p className="eyebrow small">Dashboard</p>
+              <h4>Favorites, history, and popularity</h4>
+            </div>
+            {userDataLoading ? <span className="badge muted">Syncing…</span> : null}
+          </div>
+          <div className="dashboard-grid">
+            <div className="dash-card">
+              <div className="dash-card-head">
+                <span>Favorites</span>
+                <span className="badge">{favoriteList.length}</span>
+              </div>
+              {favoriteList.length === 0 ? (
+                <p className="muted small">No favorites yet.</p>
+              ) : (
+                <ul className="mini-list">
+                  {favoriteList.map((name) => (
+                    <li key={name}>
+                      <span>{name}</span>
+                      <button
+                        className="ghost-btn"
+                        onClick={() => {
+                          const place = POPULAR_PLACES.find((p) => p.name === name);
+                          if (place) handleSelect(place);
+                        }}
+                      >
+                        View
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="dash-card">
+              <div className="dash-card-head">
+                <span>Recent history</span>
+                <span className="badge">{recentHistory.length}</span>
+              </div>
+              {recentHistory.length === 0 ? (
+                <p className="muted small">You have not viewed any places yet.</p>
+              ) : (
+                <ul className="mini-list">
+                  {recentHistory.map((item) => (
+                    <li key={`${item.place}-${item.visitedAt}`}>
+                      <div>
+                        <strong>{item.place}</strong>
+                        <span className="muted small"> · {formatTimeAgo(item.visitedAt)}</span>
+                      </div>
+                      <button
+                        className="ghost-btn"
+                        onClick={() => {
+                          const place = POPULAR_PLACES.find((p) => p.name === item.place);
+                          if (place) handleSelect(place);
+                        }}
+                      >
+                        Revisit
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="dash-card">
+              <div className="dash-card-head">
+                <span>Popularity ranking</span>
+                <span className="badge">Top {Math.min(popularityRanking.length, 5)}</span>
+              </div>
+              <ul className="mini-list">
+                {popularityRanking.slice(0, 5).map((item, idx) => (
+                  <li key={item.place}>
+                    <div className="ranking-row">
+                      <span className="rank-index">#{idx + 1}</span>
+                      <div className="ranking-copy">
+                        <strong>{item.place}</strong>
+                        <span className="muted small">
+                          {formatNumber(item.live)} live · score {formatNumber(item.score)}
+                          {item.isFavorite ? " · ★" : ""}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      className="ghost-btn"
+                      onClick={() => {
+                        const place = POPULAR_PLACES.find((p) => p.name === item.place);
+                        if (place) handleSelect(place);
+                      }}
+                    >
+                      Fly
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </aside>
     </div>
