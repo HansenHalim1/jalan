@@ -119,7 +119,7 @@ const POPULAR_PLACES: Place[] = [
   
   {
     name: "Museum Bank Indonesia",
-    coordinates: [106.81228, -6.13707],
+    coordinates: [106.81293, -6.13684],
     description: "A museum showcasing Indonesia’s monetary and economic history.",
     image: 
       "https://upload.wikimedia.org/wikipedia/commons/e/e1/Bank_Indonesia_Museum_-_Jakarta_%282025%29_-_img_01.jpg",
