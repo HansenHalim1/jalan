@@ -40,13 +40,14 @@ body {
 
 .info-panel {
   width: 360px;
+  max-height: 100vh;
   max-width: 100%;
   background: #ffffff;
   border-left: 1px solid #e3e8f0;
   box-shadow: -8px 0 24px rgba(15, 23, 42, 0.06);
   padding: 24px;
   box-sizing: border-box;
-  overflow-y: auto;
+  overflow-y: scroll;
 }
 
 .info-header {
@@ -104,6 +105,7 @@ body {
 }
 
 .filter-row select {
+  width: 100%;
   padding: 12px 10px;
   border-radius: 10px;
   border: 1px solid #dfe6ef;
