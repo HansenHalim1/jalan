@@ -541,6 +541,7 @@ export default function Home() {
       style: "mapbox://styles/mapbox/streets-v12",
       center: [106.8272, -6.1751],
       zoom: 11.5,
+      maxBounds: [ [106.689, -6.370], [106.973, -6.090],],
       pitch: 50,
       bearing: -15,
     });
