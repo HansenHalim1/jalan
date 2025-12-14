@@ -123,7 +123,7 @@ const POPULAR_PLACES: Place[] = [
     description: "A museum showcasing Indonesia’s monetary and economic history.",
     image: 
       "https://upload.wikimedia.org/wikipedia/commons/e/e1/Bank_Indonesia_Museum_-_Jakarta_%282025%29_-_img_01.jpg",
-    iamges: [
+    images: [
       "https://upload.wikimedia.org/wikipedia/commons/e/e1/Bank_Indonesia_Museum_-_Jakarta_%282025%29_-_img_01.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Museum_Bank_Indonesia01.jpg/250px-Museum_Bank_Indonesia01.jpg",
       ],
@@ -158,7 +158,7 @@ const POPULAR_PLACES: Place[] = [
     coordinates: [106.84513, -6.12293],
     description: "integrated tourism complex and leading recreation destination located on the coast of North Jakarta.",
     image:
-      "https://soekarnohatta.injourneyairports.id/api/v1/system/upload/view?id=703".
+      "https://soekarnohatta.injourneyairports.id/api/v1/system/upload/view?id=703",
     images: [
       "https://soekarnohatta.injourneyairports.id/api/v1/system/upload/view?id=703",
       "https://www.ancol.com/shared/images/606bc34a-097b-4b33-8fcb-92247a25b2bd.jpg",
