@@ -54,7 +54,7 @@ const POPULAR_PLACES: Place[] = [
     ],
     address: "Gambir, Central Jakarta",
     area: "Central Jakarta",
-    category: "Landmark",
+    category: "Landmark & Icons",
     rating: 4.7,
     visitorCount: 1280,
     youtubeQuery: "Monas Jakarta walking tour",
