@@ -59,6 +59,25 @@ const POPULAR_PLACES: Place[] = [
     visitorCount: 1280,
     youtubeQuery: "Monas Jakarta walking tour",
   },
+
+  {
+  name: "Gelora Bung Karno (GBK)",
+  coordinates: [106.80293, -6.21853],
+  description:
+    "Jakarta’s iconic national sports complex, frequently hosting major sporting events, concerts, and public activities.",
+  image:
+    "https://awsimages.detik.net.id/community/media/visual/2018/01/12/f313853f-78ad-4a97-aa3a-1ae7141b566d_169.jpeg?w=1200",
+  images: [
+    "https://awsimages.detik.net.id/community/media/visual/2018/01/12/f313853f-78ad-4a97-aa3a-1ae7141b566d_169.jpeg?w=1200",
+    "https://cdn.setneg.go.id/_multimedia/photo/20210621/3552IRF_7556.JPG",
+    ],
+  address: "Senayan, Central Jakarta",
+  area: "Central Jakarta",
+  category: "Landmark & Icons",
+  rating: 4.7,
+  visitorCount: 1500,
+  youtubeQuery: "Gelora Bung Karno Jakarta tour",
+},
   
   {
     name: "Istiqlal Mosque",
@@ -137,7 +156,7 @@ const POPULAR_PLACES: Place[] = [
   
   {
     name: "Taman Cattleya",
-    coordinates: [106.7928, -6.1932],
+    coordinates: [106.79450, -6.18171],
     description: "A city park with walking/jogging paths and a small pond in the middle & statues, offering green space and relaxation in West Jakarta.",
     image: 
       "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSyTWNsRuP1D3Pfm27-AdpTHHy1ZADwaUEl3VvxrALfswrLszCkHFMrA2nath601jh1rvCgQQCXBOokuAAMY7iVoVuAESFFg_A1wz_D_i01MOt3gmdSNshXca5TaKDuqQb3samgL0Q=s680-w680-h510-rw",
@@ -155,7 +174,7 @@ const POPULAR_PLACES: Place[] = [
   
   {
     name: "Ancol Dreamland",
-    coordinates: [106.84513, -6.12293],
+    coordinates: [106.83350, -6.12510],
     description: "integrated tourism complex and leading recreation destination located on the coast of North Jakarta.",
     image:
       "https://soekarnohatta.injourneyairports.id/api/v1/system/upload/view?id=703",
@@ -173,7 +192,7 @@ const POPULAR_PLACES: Place[] = [
   
   {
     name: "Mangrove Ecotourism PIK",
-    coordinates: [106.7427, -6.1017],
+    coordinates: [106.76099, -6.12191],
     description: "Mangrove forest area offering eco-tourism and nature walks.",
     image: 
       "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSwSGtos6-MMCWoVM2BGT7GZuFrWNYBTL49quS5Deibc70-C8oXPt7osCn8xkf9SMGaP-fe_fKDDrL8212cfxeUGqDgIvFK02eL6p8HdHz-fPUHKattCcdw_ug4Anrvnitl3EDSLIw=s680-w680-h510-rw",
@@ -210,7 +229,7 @@ const POPULAR_PLACES: Place[] = [
 
   {
     name: "M Bloc Space",
-    coordinates: [106.8008, -6.2439],
+    coordinates: [106.79878, -6.24135],
     description: "Creative and cultural space featuring art, events, and performances.",
     image:
       "https://asset.kompas.com/crops/8FWenNfVbq1roAyjLuOYuVc4Tuw=/89x0:944x570/1200x800/data/photo/2020/06/15/5ee7096556d33.jpg",
@@ -228,7 +247,7 @@ const POPULAR_PLACES: Place[] = [
   
   {
     name: "Ragunan Zoo",
-    coordinates: [106.8205, -6.3049],
+    coordinates: [106.82004, -6.31077],
     description: "Large zoological park and one of Jakarta’s major attractions.",
     image:
       "https://tangselpos.id/storage/2025/10/night-at-the-ragunan-zoo-09102025-141804.jpg",
