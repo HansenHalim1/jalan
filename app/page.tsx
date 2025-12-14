@@ -59,24 +59,7 @@ const POPULAR_PLACES: Place[] = [
     visitorCount: 1280,
     youtubeQuery: "Monas Jakarta walking tour",
   },
-  {
-    name: "Kota Tua (Old Town)",
-    coordinates: [106.813202, -6.1352],
-    description:
-      "Jakarta's historic district showcasing Dutch colonial architecture, fascinating museums, and the bustling Fatahillah Square.",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Jakarta_Indonesia_Business-in-Kota-Jakarta-01.jpg",
-    images: [
-      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Jakarta_Indonesia_Business-in-Kota-Jakarta-01.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/8/87/Jakarta_Indonesia_Hawkers-in-Kota-Jakarta-02.jpg",
-    ],
-    address: "Pinangsia, West Jakarta",
-    area: "West Jakarta",
-    category: "Historic District",
-    rating: 4.5,
-    visitorCount: 980,
-    youtubeQuery: "Kota Tua Jakarta vlog",
-  },
+  
   {
     name: "Istiqlal Mosque",
     coordinates: [106.831315, -6.170166],
@@ -95,6 +78,7 @@ const POPULAR_PLACES: Place[] = [
     visitorCount: 1420,
     youtubeQuery: "Istiqlal Mosque Jakarta tour",
   },
+  
   {
     name: "Jakarta Cathedral",
     coordinates: [106.8338, -6.16951],
@@ -113,24 +97,98 @@ const POPULAR_PLACES: Place[] = [
     visitorCount: 640,
     youtubeQuery: "Jakarta Cathedral walkthrough",
   },
+  
   {
-    name: "Grand Indonesia Mall",
-    coordinates: [106.82299, -6.19507],
+    name: "Kota Tua (Old Town)",
+    coordinates: [106.813202, -6.1352],
     description:
-      "A premier, expansive shopping mall complex in Central Jakarta, offering a wide array of retail, dining, and entertainment options.",
+      "Jakarta's historic district showcasing Dutch colonial architecture, fascinating museums, and the bustling Fatahillah Square.",
     image:
-      "https://upload.wikimedia.org/wikipedia/commons/4/4d/Kempideli_at_Grand_Indonesia.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Jakarta_Indonesia_Business-in-Kota-Jakarta-01.jpg",
     images: [
-      "https://upload.wikimedia.org/wikipedia/commons/4/4d/Kempideli_at_Grand_Indonesia.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/4/4b/Yoshinoya_at_Grand_Indonesia.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Jakarta_Indonesia_Business-in-Kota-Jakarta-01.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/87/Jakarta_Indonesia_Hawkers-in-Kota-Jakarta-02.jpg",
     ],
-    address: "MH Thamrin, Central Jakarta",
-    area: "Central Jakarta",
-    category: "Shopping",
-    rating: 4.6,
-    visitorCount: 2100,
-    youtubeQuery: "Grand Indonesia Mall tour",
+    address: "Pinangsia, West Jakarta",
+    area: "West Jakarta",
+    category: "Historical & Cultural",
+    rating: 4.5,
+    visitorCount: 980,
+    youtubeQuery: "Kota Tua Jakarta vlog",
   },
+  
+  {
+    name: "Museum Bank Indonesia",
+    coordinates: [106.81228, -6.13707],
+    description: "A museum showcasing Indonesia’s monetary and economic history.",
+    image: 
+      "https://upload.wikimedia.org/wikipedia/commons/e/e1/Bank_Indonesia_Museum_-_Jakarta_%282025%29_-_img_01.jpg",
+    iamges: [
+      "https://upload.wikimedia.org/wikipedia/commons/e/e1/Bank_Indonesia_Museum_-_Jakarta_%282025%29_-_img_01.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Museum_Bank_Indonesia01.jpg/250px-Museum_Bank_Indonesia01.jpg",
+      ],
+    address: "Kota Tua, West Jakarta",
+    area: "West Jakarta",
+    category: "Historical & Cultural",
+    rating: 4.6,
+    visitorCount: 600,
+    youtubeQuery: "Museum Bank Indonesia",
+  },
+  
+  {
+    name: "Taman Cattleya",
+    coordinates: [106.7928, -6.1932],
+    description: "A city park with walking/jogging paths and a small pond in the middle & statues, offering green space and relaxation in West Jakarta.",
+    image: 
+      "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSyTWNsRuP1D3Pfm27-AdpTHHy1ZADwaUEl3VvxrALfswrLszCkHFMrA2nath601jh1rvCgQQCXBOokuAAMY7iVoVuAESFFg_A1wz_D_i01MOt3gmdSNshXca5TaKDuqQb3samgL0Q=s680-w680-h510-rw",
+    images: [
+      "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSyTWNsRuP1D3Pfm27-AdpTHHy1ZADwaUEl3VvxrALfswrLszCkHFMrA2nath601jh1rvCgQQCXBOokuAAMY7iVoVuAESFFg_A1wz_D_i01MOt3gmdSNshXca5TaKDuqQb3samgL0Q=s680-w680-h510-rw",
+      "https://zjglidcehtsqqqhbdxyp.supabase.co/storage/v1/object/public/atourin/images/destination/jakarta/taman-cattleya-profile1641207127.png?x-image-process=image/resize,p_100,limit_1/imageslim",
+      ],
+    address: "Palmerah, West Jakarta",
+    area: "West Jakarta",
+    category: "Nature & Park",
+    rating: 4.4,
+    visitorCount: 500,
+    youtubeQuery: "Taman Cattleya Jakarta",
+  },
+  
+  {
+    name: "Ancol Dreamland",
+    coordinates: [106.84513, -6.12293],
+    description: "integrated tourism complex and leading recreation destination located on the coast of North Jakarta.",
+    image:
+      "https://soekarnohatta.injourneyairports.id/api/v1/system/upload/view?id=703".
+    images: [
+      "https://soekarnohatta.injourneyairports.id/api/v1/system/upload/view?id=703",
+      "https://www.ancol.com/shared/images/606bc34a-097b-4b33-8fcb-92247a25b2bd.jpg",
+      ],
+    address: "Ancol, North Jakarta",
+    area: "North Jakarta",
+    category: "Entertainment & Recreation",
+    rating: 4.6,
+    visitorCount: 1800,
+    youtubeQuery: "Ancol Jakarta",
+  },
+  
+  {
+    name: "Mangrove Ecotourism PIK",
+    coordinates: [106.7427, -6.1017],
+    description: "Mangrove forest area offering eco-tourism and nature walks.",
+    image: 
+      "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSwSGtos6-MMCWoVM2BGT7GZuFrWNYBTL49quS5Deibc70-C8oXPt7osCn8xkf9SMGaP-fe_fKDDrL8212cfxeUGqDgIvFK02eL6p8HdHz-fPUHKattCcdw_ug4Anrvnitl3EDSLIw=s680-w680-h510-rw",
+    images:[
+      "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSwSGtos6-MMCWoVM2BGT7GZuFrWNYBTL49quS5Deibc70-C8oXPt7osCn8xkf9SMGaP-fe_fKDDrL8212cfxeUGqDgIvFK02eL6p8HdHz-fPUHKattCcdw_ug4Anrvnitl3EDSLIw=s680-w680-h510-rw",
+      "https://lh3.googleusercontent.com/gps-cs-s/AG0ilSwWD1Y9T86o0YcdMFckYZQMeY0Ph0r4__WkMhj60ajIo5H-iRIKCGK7vMaht0GFnCnE8do7f1r91z8Pa4UhsgOJ26OIMhGZDBKB1loQE1hkyMHM6eX6gO7tzXpamkwh_-9SEECN=s680-w680-h510-rw",
+      ],
+    address: "Pantai Indah Kapuk, North Jakarta",
+    area: "North Jakarta",
+    category: "Nature & Park",
+    rating: 4.5,
+    visitorCount: 800,
+    youtubeQuery: "Mangrove PIK Jakarta",
+  },
+  
   {
     name: "Taman Mini Indonesia Indah (TMII)",
     coordinates: [106.895157, -6.302446],
@@ -144,10 +202,46 @@ const POPULAR_PLACES: Place[] = [
     ],
     address: "East Jakarta",
     area: "East Jakarta",
-    category: "Theme Park",
+    category: "Historical & Cultural",
     rating: 4.5,
     visitorCount: 1520,
     youtubeQuery: "Taman Mini Indonesia Indah highlights",
+  },
+
+  {
+    name: "M Bloc Space",
+    coordinates: [106.8008, -6.2439],
+    description: "Creative and cultural space featuring art, events, and performances.",
+    image:
+      "https://asset.kompas.com/crops/8FWenNfVbq1roAyjLuOYuVc4Tuw=/89x0:944x570/1200x800/data/photo/2020/06/15/5ee7096556d33.jpg",
+    images: [
+      "https://asset.kompas.com/crops/8FWenNfVbq1roAyjLuOYuVc4Tuw=/89x0:944x570/1200x800/data/photo/2020/06/15/5ee7096556d33.jpg",
+      "https://cdn.grid.id/crop/0x240:1200x1200/x/photo/2022/05/24/m-blocjpg-20220524112545.jpg",
+      ],
+    address: "Blok M, South Jakarta",
+    area: "South Jakarta",
+    category: "Entertainment & Recreation",
+    rating: 4.6,
+    visitorCount: 900,
+    youtubeQuery: "M Bloc Jakarta",
+  },
+  
+  {
+    name: "Ragunan Zoo",
+    coordinates: [106.8205, -6.3049],
+    description: "Large zoological park and one of Jakarta’s major attractions.",
+    image:
+      "https://tangselpos.id/storage/2025/10/night-at-the-ragunan-zoo-09102025-141804.jpg",
+    images: [
+      "https://tangselpos.id/storage/2025/10/night-at-the-ragunan-zoo-09102025-141804.jpg",
+      "https://cdn01.metrotvnews.com/dynamic/content/2025/10/09/b2lCpavA/a_68e78315d7333.jpg?w=720",
+      ],
+    address: "Pasar Minggu, South Jakarta",
+    area: "South Jakarta",
+    category: "Entertainment & Recreation",
+    rating: 4.5,
+    visitorCount: 1700,
+    youtubeQuery: "Ragunan Zoo Jakarta",
   },
 ];
 
