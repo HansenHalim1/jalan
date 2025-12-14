@@ -57,7 +57,7 @@ const POPULAR_PLACES: Place[] = [
     category: "Landmark & Icons",
     rating: 4.7,
     visitorCount: 1280,
-    youtubeQuery: "Monas Jakarta walking tour",
+    youtubeQuery: "https://www.youtube.com/watch?v=hBYzFSS_p04",
   },
 
   {
@@ -100,7 +100,7 @@ const POPULAR_PLACES: Place[] = [
   
   {
     name: "Jakarta Cathedral",
-    coordinates: [106.8338, -6.16951],
+    coordinates: [106.83321, -6.16899],
     description:
       "A stunning Neo-gothic Roman Catholic cathedral situated directly opposite the Istiqlal Mosque, symbolizing religious harmony.",
     image:
@@ -175,7 +175,7 @@ const POPULAR_PLACES: Place[] = [
   {
     name: "Ancol Dreamland",
     coordinates: [106.83350, -6.12510],
-    description: "integrated tourism complex and leading recreation destination located on the coast of North Jakarta.",
+    description: "Integrated tourism complex and leading recreation destination located on the coast of North Jakarta.",
     image:
       "https://soekarnohatta.injourneyairports.id/api/v1/system/upload/view?id=703",
     images: [
@@ -944,7 +944,7 @@ export default function Home() {
           <p className="eyebrow">Jakarta</p>
           <h1>3D Tourist Spots</h1>
           <p className="lede">
-            Explore Jakarta&apos;s landmarks with 3D terrain, interactive
+            Explore Jakarta&apos;s tourist attractions with 3D terrain, interactive
             fly-to, and photo highlights.
           </p>
         </header>
